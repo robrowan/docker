@@ -1,2 +1,54 @@
 ---
 # tasks file for docker
+
+- name: Install/Update EPEL repository to latest
+  package:
+    name: epel-release
+    state: latest
+  when: ansible_os_family == "RedHat"
+
+- name: Remove old packages
+  package: name={{ item }} state=absent
+  with_items: 
+    - docker
+    - docker-common
+    - docker-engine
+
+- name: Add Docker CE repository
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+  when: ansible_os_family == "RedHat"
+
+- name: Install docker + PIP
+  package: name={{ item }} state=present
+  with_items:
+    - docker-ce
+    - python-pip
+  when: ansible_os_family == "RedHat"
+
+- name: Install docker
+  package: name={{ item }} state=present
+  with_items:
+    - docker.io
+    - python-pip
+  when: ansible_os_family == "Debian"
+
+- name: Python docker-py remove
+  pip: 
+    name: docker
+    state: absent
+
+- name: Python docker
+  pip: 
+    name: docker
+
+- name: start Docker
+  service: 
+    name: docker 
+    state: started
+    enabled: yes
